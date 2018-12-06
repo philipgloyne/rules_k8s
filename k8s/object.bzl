@@ -490,6 +490,17 @@ def k8s_object(name, **kwargs):
         args=kwargs.get("args"),
         **implicit_args
     )
+    _k8s_object_apply(
+        name=name + ".rollout_status",
+        resolved=name,
+        kind=kwargs.get("kind"),
+        cluster=kwargs.get("cluster"),
+        context=kwargs.get("context"),
+        user=kwargs.get("user"),
+        namespace=kwargs.get("namespace"),
+        args=kwargs.get("args"),
+        **implicit_args
+    )
     if "kind" in kwargs:
       _k8s_object_describe(
         name=name + ".describe",
