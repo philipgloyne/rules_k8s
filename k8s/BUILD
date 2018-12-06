@@ -18,12 +18,13 @@ licenses(["notice"])  # Apache 2.0
 exports_files([
     "apply.sh.tpl",
     "create.sh.tpl",
+    "delete.sh.tpl",
+    "describe.sh.tpl",
     "replace.sh.tpl",
     "resolve.sh.tpl",
     "resolve-all.sh.tpl",
     "reverse.sh.tpl",
-    "delete.sh.tpl",
-    "describe.sh.tpl",
+    "rollout_status.sh.tpl",
 ])
 
 load("@subpar//:subpar.bzl", "par_binary")
