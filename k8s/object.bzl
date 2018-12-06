@@ -410,6 +410,27 @@ _k8s_object_delete = rule(
     toolchains = ["@io_bazel_rules_k8s//toolchains/kubectl:toolchain_type"],
 )
 
+_k8s_object_rollout_status = rule(
+    attrs = _add_dicts(
+        {
+            "resolved": attr.label(
+                cfg = "target",
+                executable = True,
+                allow_files = True,
+            ),
+            "_template": attr.label(
+                default = Label("//k8s:rollout_status.sh.tpl"),
+                single_file = True,
+                allow_files = True,
+            ),
+        },
+        _common_attrs,
+    ),
+    executable = True,
+    implementation = _common_impl,
+    toolchains = ["@io_bazel_rules_k8s//toolchains/kubectl:toolchain_type"],
+)
+
 # See "attrs" parameter at https://docs.bazel.build/versions/master/skylark/lib/globals.html#parameters-26
 _implicit_attrs = ["visibility", "deprecation", "tags", "testonly", "features"]
 
@@ -490,7 +511,7 @@ def k8s_object(name, **kwargs):
         args=kwargs.get("args"),
         **implicit_args
     )
-    _k8s_object_apply(
+    _k8s_object_rollout_status(
         name=name + ".rollout_status",
         resolved=name,
         kind=kwargs.get("kind"),
