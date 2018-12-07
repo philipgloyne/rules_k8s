@@ -14,7 +14,7 @@
 workspace(name = "io_bazel_rules_k8s")
 
 load("@bazel_tools//tools/build_defs/repo:git.bzl", "git_repository")
-load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive", "http_file")
 
 http_archive(
     name = "base_images_docker",
@@ -45,8 +45,6 @@ container_pull(
     repository = "google/bazel",
 )
 
-load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_file")
-
 # Gcloud installer
 http_file(
     name = "gcloud_archive",
@@ -61,7 +59,7 @@ docker_repositories()
 
 load("//k8s:k8s.bzl", "k8s_repositories", "k8s_defaults")
 
-k8s_repositories()
+k8s_repositories(build_kubectl_srcs = False)
 
 _CLUSTER = "gke_rules-k8s_us-central1-f_testing"
 
@@ -119,27 +117,57 @@ py_library(
     url = "https://pypi.python.org/packages/source/m/mock/mock-1.0.1.tar.gz",
 )
 
+http_archive(
+    name = "io_bazel_rules_go",
+    sha256 = "ced2749527318abeddd9d91f5e1555ed86e2b6bfd08677b750396e0ec5462bec",
+    strip_prefix = "rules_go-0.16.1",
+    urls = ["https://github.com/bazelbuild/rules_go/archive/0.16.1.tar.gz"],
+)
+
+load("@io_bazel_rules_go//go:def.bzl", "go_rules_dependencies", "go_register_toolchains")
+
+go_rules_dependencies()
+
+go_register_toolchains()
+
 # ================================================================
 # Imports for examples/
 # ================================================================
 
-git_repository(
-    name = "org_pubref_rules_protobuf",
-    commit = "4cc90ab2b9f4d829b9706221d4167bc7fb3bd247",  # patched v0.8.1 (Sep 27 2017)
-    remote = "https://github.com/pubref/rules_protobuf.git",
+http_archive(
+    name = "build_stack_rules_proto",
+    sha256 = "0be90d609fcefae9cc5e404540b9b23176fb609c9d62f4f9f68528f66a6839bf",
+    strip_prefix = "rules_proto-4c2226458203a9653ae722245cc27e8b07c383f7",
+    urls = ["https://github.com/stackb/rules_proto/archive/4c2226458203a9653ae722245cc27e8b07c383f7.tar.gz"],
 )
 
-load("@org_pubref_rules_protobuf//protobuf:rules.bzl", "proto_repositories")
+load("@build_stack_rules_proto//:deps.bzl", "io_grpc_grpc_java")
 
-proto_repositories()
+io_grpc_grpc_java()
 
-load("@org_pubref_rules_protobuf//cpp:rules.bzl", "cpp_proto_repositories")
+load("@io_grpc_grpc_java//:repositories.bzl", "grpc_java_repositories")
 
-cpp_proto_repositories()
+grpc_java_repositories(omit_com_google_protobuf = True)
 
-load("@org_pubref_rules_protobuf//java:rules.bzl", "java_proto_repositories")
+load("@build_stack_rules_proto//java:deps.bzl", "java_grpc_library")
 
-java_proto_repositories()
+java_grpc_library()
+
+load("@build_stack_rules_proto//cpp:deps.bzl", "cpp_grpc_library")
+
+cpp_grpc_library()
+
+load("@com_github_grpc_grpc//bazel:grpc_deps.bzl", "grpc_deps")
+
+grpc_deps()
+
+load("@build_stack_rules_proto//go:deps.bzl", "go_grpc_library")
+
+go_grpc_library()
+
+load("@build_stack_rules_proto//python:deps.bzl", "python_grpc_library")
+
+python_grpc_library()
 
 # We use cc_image to build a sample service
 load(
@@ -157,19 +185,6 @@ load(
 
 _java_image_repos()
 
-git_repository(
-    name = "io_bazel_rules_go",
-    commit = "ae70411645c171b2056d38a6a959e491949f9afe",
-    remote = "https://github.com/bazelbuild/rules_go.git",
-)
-
-load(
-    "@io_bazel_rules_go//go:def.bzl",
-    "go_repositories",
-)
-
-go_repositories()
-
 # We use go_image to build a sample service
 load(
     "@io_bazel_rules_docker//go:image.bzl",
@@ -178,13 +193,9 @@ load(
 
 _go_image_repos()
 
-load("@org_pubref_rules_protobuf//go:rules.bzl", "go_proto_repositories")
-
-go_proto_repositories()
-
 git_repository(
     name = "io_bazel_rules_python",
-    commit = "3e167dcfb17356c68588715ed324c5e9b76f391d",
+    commit = "f3a6a8d00a51a1f0e6d61bc7065c19fea2b3dd7a",
     remote = "https://github.com/bazelbuild/rules_python.git",
 )
 
@@ -197,16 +208,34 @@ load(
 pip_repositories()
 
 pip_import(
+    name = "protobuf_py_deps",
+    requirements = "@build_stack_rules_proto//python/requirements:protobuf.txt",
+)
+
+load("@protobuf_py_deps//:requirements.bzl", protobuf_pip_install = "pip_install")
+
+protobuf_pip_install()
+
+pip_import(
+    name = "grpc_py_deps",
+    requirements = "@build_stack_rules_proto//python:requirements.txt",
+)
+
+load("@grpc_py_deps//:requirements.bzl", grpc_pip_install = "pip_install")
+
+grpc_pip_install()
+
+pip_import(
     name = "examples_helloworld_pip",
     requirements = "//examples/hellogrpc/py:requirements.txt",
 )
 
 load(
     "@examples_helloworld_pip//:requirements.bzl",
-    grpcpip_install = "pip_install",
+    setuptools_pip_install = "pip_install",
 )
 
-grpcpip_install()
+setuptools_pip_install()
 
 pip_import(
     name = "examples_hellohttp_pip",
@@ -228,13 +257,9 @@ load(
 
 _py_image_repos()
 
-load("@org_pubref_rules_protobuf//python:rules.bzl", "py_proto_repositories")
-
-py_proto_repositories()
-
 git_repository(
     name = "io_bazel_rules_jsonnet",
-    commit = "09ec18db5b9ad3129810f5f0ccc86363a8bfb6be",
+    commit = "f39f5fd8c9d8ae6273cd6d8610016a561d4d1c95",
     remote = "https://github.com/bazelbuild/rules_jsonnet.git",
 )
 
@@ -256,9 +281,9 @@ _controller_pip_install()
 
 http_archive(
     name = "build_bazel_rules_nodejs",
-    sha256 = "779edee08986ab40dbf8b1ad0260f3cc8050f1e96ccd2a88dc499848bbdb787f",
-    strip_prefix = "rules_nodejs-0.11.1",
-    urls = ["https://github.com/bazelbuild/rules_nodejs/archive/0.11.1.zip"],
+    sha256 = "b996a3ce55c49ae359468dae040b30025fdc0917f67b08c36929ecb1ea02907e",
+    strip_prefix = "rules_nodejs-0.16.3",
+    urls = ["https://github.com/bazelbuild/rules_nodejs/archive/0.16.3.zip"],
 )
 
 load("@build_bazel_rules_nodejs//:defs.bzl", "node_repositories", "npm_install")

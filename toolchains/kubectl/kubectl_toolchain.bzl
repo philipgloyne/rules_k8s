@@ -19,13 +19,17 @@ KubectlInfo = provider(
     doc = "Information about how to invoke the kubectl tool.",
     fields = {
         "tool_path": "Path to the kubectl executable",
+        "tool_target": "Target to build kubectl executable",
     },
 )
 
 def _kubectl_toolchain_impl(ctx):
+    if not ctx.attr.tool_path and not ctx.attr.tool_target:
+        print("No kubectl tool was found or built, executing run for rules_k8s targets might not work.")
     toolchain_info = platform_common.ToolchainInfo(
         kubectlinfo = KubectlInfo(
             tool_path = ctx.attr.tool_path,
+            tool_target = ctx.attr.tool_target,
         ),
     )
     return [toolchain_info]
@@ -33,6 +37,13 @@ def _kubectl_toolchain_impl(ctx):
 kubectl_toolchain = rule(
     implementation = _kubectl_toolchain_impl,
     attrs = {
-        "tool_path": attr.string(),
+        "tool_path": attr.string(
+            doc = "Absolute path to a pre-installed kubectl binary.",
+            mandatory = False,
+        ),
+        "tool_target": attr.label(
+            doc = "Target to build kubectl from source.",
+            mandatory = False,
+        ),
     },
 )

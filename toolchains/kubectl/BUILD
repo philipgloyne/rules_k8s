@@ -13,6 +13,8 @@
 # limitations under the License.
 package(default_visibility = ["//visibility:private"])
 
+licenses(["notice"])  # Apache 2.0
+
 load(":kubectl_toolchain.bzl", "kubectl_toolchain")
 
 # kubectl toolchain type
@@ -32,7 +34,7 @@ toolchain(
         "@bazel_tools//platforms:linux",
         "@bazel_tools//platforms:x86_64",
     ],
-    toolchain = "@local_k8s_config//:toolchain",
+    toolchain = "@k8s_config//:toolchain",
     toolchain_type = ":toolchain_type",
 )
 
@@ -42,7 +44,7 @@ toolchain(
         "@bazel_tools//platforms:osx",
         "@bazel_tools//platforms:x86_64",
     ],
-    toolchain = "@local_k8s_config//:toolchain",
+    toolchain = "@k8s_config//:toolchain",
     toolchain_type = ":toolchain_type",
 )
 
@@ -52,6 +54,6 @@ toolchain(
         "@bazel_tools//platforms:windows",
         "@bazel_tools//platforms:x86_64",
     ],
-    toolchain = "@local_k8s_config//:toolchain",
+    toolchain = "@k8s_config//:toolchain",
     toolchain_type = ":toolchain_type",
 )
