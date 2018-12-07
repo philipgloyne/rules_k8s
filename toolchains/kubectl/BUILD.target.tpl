@@ -1,4 +1,4 @@
-# Copyright 2017 The Bazel Authors. All rights reserved.
+# Copyright 2018 The Bazel Authors. All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -11,14 +11,15 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+"""
+This BUILD file is auto-generated from toolchains/kubectl/BUILD.tpl
+"""
+
 package(default_visibility = ["//visibility:public"])
 
-licenses(["notice"])  # Apache 2.0
+load("@io_bazel_rules_k8s//toolchains/kubectl:kubectl_toolchain.bzl", "kubectl_toolchain")
 
-py_binary(
-    name = "client",
-    srcs = ["client.py"],
-    deps = [
-        "//examples/hellogrpc/proto:simple_python_grpc",
-    ],
+kubectl_toolchain(
+    name = "toolchain",
+    tool_target = "%{KUBECTL_TARGET}",
 )
